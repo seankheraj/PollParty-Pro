@@ -1,0 +1,6 @@
+{
+  "name": "PollParty Console",
+  "description": "A real-time polling presenter dashboard with live charts, bubble clouds, and word clouds.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
