@@ -14,6 +14,8 @@ import {
   CircleDot, 
   Cloud,
   LayoutGrid,
+  Eye,
+  EyeOff,
   CheckCircle2,
   AlertCircle
 } from 'lucide-react';
@@ -293,6 +295,7 @@ export default function App() {
   const [pollData, setPollData] = useState<PollResult | null>(null);
   const [status, setStatus] = useState<'idle' | 'live' | 'error'>('idle');
   const [loading, setLoading] = useState(false);
+  const [showResponses, setShowResponses] = useState(true);
 
   // Filter MASTER_DATA based on activeStates
   const activeQuestions = useMemo(() => 
@@ -427,7 +430,7 @@ export default function App() {
               >
                 <Menu className="w-6 h-6" />
               </button>
-              <h1 className="font-extrabold text-xl tracking-tight">PollParty <span className="font-normal opacity-50">Console</span></h1>
+              <h1 className="font-extrabold text-xl tracking-tight">PollParty <span className="text-[#ffdc00]">Pro</span></h1>
             </div>
 
             <div className="flex items-center gap-6">
@@ -466,62 +469,77 @@ export default function App() {
                 <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] mb-8">Poll Configuration</h2>
                 
                 <div className="space-y-6">
-                  {MASTER_DATA.map((q) => (
-                    <div 
-                      key={q.id}
-                      className={cn("p-5 rounded-[2rem] border transition-all duration-300", 
-                        activeStates[q.id] ? "bg-slate-50 border-slate-200" : "bg-white border-slate-100 opacity-50")}
-                    >
-                      <div className="flex justify-between items-center mb-5">
-                        <div className="flex items-center gap-4">
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input 
-                              type="checkbox" 
-                              className="sr-only peer"
-                              checked={activeStates[q.id]}
-                              onChange={() => setActiveStates(prev => ({ ...prev, [q.id]: !prev[q.id] }))}
-                            />
-                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#004c9b]"></div>
-                          </label>
-                          <p className="font-extrabold text-sm text-slate-800 tracking-tight">Question {q.id}</p>
-                        </div>
-                        <a 
-                          href={q.edit} 
-                          target="_blank" 
-                          rel="noreferrer"
-                          className="p-2.5 bg-white border border-slate-200 hover:bg-[#004c9b] hover:text-white rounded-xl transition text-slate-400 shadow-sm"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </a>
-                      </div>
+                  {MASTER_DATA.map((q) => {
+                    const isActive = activeStates[q.id];
+                    const questionIndex = activeQuestions.findIndex(aq => aq.id === q.id);
+                    const isSelected = currentIdx === questionIndex;
 
-                      <div className="relative group">
-                        <select 
-                          value={visualTypes[q.id]}
-                          onChange={(e) => setVisualTypes(prev => ({ ...prev, [q.id]: e.target.value as VisualType }))}
-                          className="w-full text-[11px] font-black uppercase tracking-widest pl-12 pr-10 py-4 rounded-2xl border border-slate-200 bg-white hover:border-[#004c9b] focus:ring-4 focus:ring-[#004c9b]/10 outline-none transition-all appearance-none cursor-pointer"
-                        >
-                          <option value="bar">Bar Chart</option>
-                          <option value="pie">Pie Chart</option>
-                          <option value="radar">Radar Chart</option>
-                          <option value="bubble">Bubble Cloud</option>
-                          <option value="word">Word Cloud</option>
-                          <option value="grid">Response Grid</option>
-                        </select>
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#004c9b] pointer-events-none">
-                          {visualTypes[q.id] === 'bar' && <BarChart3 className="w-4 h-4" />}
-                          {visualTypes[q.id] === 'pie' && <PieChart className="w-4 h-4" />}
-                          {visualTypes[q.id] === 'radar' && <Radius className="w-4 h-4" />}
-                          {visualTypes[q.id] === 'bubble' && <CircleDot className="w-4 h-4" />}
-                          {visualTypes[q.id] === 'word' && <Cloud className="w-4 h-4" />}
-                          {visualTypes[q.id] === 'grid' && <LayoutGrid className="w-4 h-4" />}
+                    return (
+                      <div 
+                        key={q.id}
+                        onClick={() => {
+                          if (isActive && questionIndex !== -1) {
+                            setCurrentIdx(questionIndex);
+                          }
+                        }}
+                        className={cn("p-5 rounded-[2rem] border transition-all duration-300 relative group cursor-pointer overflow-hidden", 
+                          isActive ? (isSelected ? "bg-white border-[#004c9b] shadow-lg ring-2 ring-[#004c9b]/20" : "bg-slate-50 border-slate-200 hover:border-[#004c9b]/50") : "bg-white border-slate-100 opacity-50 cursor-not-allowed")}
+                      >
+                        {isSelected && isActive && (
+                          <div className="absolute top-0 left-0 w-1.5 h-full bg-[#004c9b]" />
+                        )}
+                        <div className="flex justify-between items-center mb-5">
+                          <div className="flex items-center gap-4">
+                            <label className="relative inline-flex items-center cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                              <input 
+                                type="checkbox" 
+                                className="sr-only peer"
+                                checked={isActive}
+                                onChange={() => setActiveStates(prev => ({ ...prev, [q.id]: !prev[q.id] }))}
+                              />
+                              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#004c9b]"></div>
+                            </label>
+                            <p className="font-extrabold text-sm text-slate-800 tracking-tight">Question {q.id}</p>
+                          </div>
+                          <a 
+                            href={q.edit} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="p-2.5 bg-white border border-slate-200 hover:bg-[#004c9b] hover:text-white rounded-xl transition text-slate-400 shadow-sm"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
                         </div>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none transition-transform group-hover:translate-y-[-2px]">
-                          <ChevronRight className="w-4 h-4 rotate-90" />
+
+                        <div className="relative" onClick={(e) => e.stopPropagation()}>
+                          <select 
+                            value={visualTypes[q.id]}
+                            onChange={(e) => setVisualTypes(prev => ({ ...prev, [q.id]: e.target.value as VisualType }))}
+                            className="w-full text-[11px] font-black uppercase tracking-widest pl-12 pr-10 py-4 rounded-2xl border border-slate-200 bg-white hover:border-[#004c9b] focus:ring-4 focus:ring-[#004c9b]/10 outline-none transition-all appearance-none cursor-pointer"
+                          >
+                            <option value="bar">Bar Chart</option>
+                            <option value="pie">Pie Chart</option>
+                            <option value="radar">Radar Chart</option>
+                            <option value="bubble">Bubble Cloud</option>
+                            <option value="word">Word Cloud</option>
+                            <option value="grid">Response Grid</option>
+                          </select>
+                          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#004c9b] pointer-events-none">
+                            {visualTypes[q.id] === 'bar' && <BarChart3 className="w-4 h-4" />}
+                            {visualTypes[q.id] === 'pie' && <PieChart className="w-4 h-4" />}
+                            {visualTypes[q.id] === 'radar' && <Radius className="w-4 h-4" />}
+                            {visualTypes[q.id] === 'bubble' && <CircleDot className="w-4 h-4" />}
+                            {visualTypes[q.id] === 'word' && <Cloud className="w-4 h-4" />}
+                            {visualTypes[q.id] === 'grid' && <LayoutGrid className="w-4 h-4" />}
+                          </div>
+                          <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none transition-transform group-hover:translate-y-[-2px]">
+                            <ChevronRight className="w-4 h-4 rotate-90" />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </motion.aside>
@@ -564,6 +582,14 @@ export default function App() {
                     <ChevronLeft className="w-6 h-6" />
                   </button>
                   <button 
+                    onClick={() => setShowResponses(!showResponses)}
+                    title={showResponses ? "Hide Responses" : "Show Responses"}
+                    className={cn("p-4 rounded-2xl shadow-sm transition-all active:scale-95 border", 
+                      showResponses ? "bg-white text-slate-600 border-slate-200 hover:bg-slate-100" : "bg-[#004c9b] text-white border-[#004c9b] hover:bg-[#003d7c]")}
+                  >
+                    {showResponses ? <EyeOff className="w-6 h-6" /> : <Eye className="w-6 h-6" />}
+                  </button>
+                  <button 
                     onClick={handleNext}
                     className="px-10 py-5 bg-[#004c9b] hover:bg-[#003d7c] text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl transition-all active:scale-95 flex items-center gap-2 group"
                   >
@@ -589,6 +615,31 @@ export default function App() {
                           <div className="absolute inset-0 border-4 border-slate-100 border-t-[#004c9b] rounded-full animate-spin" />
                         </div>
                         <p className="font-black text-slate-400 uppercase text-xs tracking-[0.3em]">Awaiting First Participant</p>
+                      </div>
+                    </motion.div>
+                  ) : !showResponses ? (
+                    <motion.div 
+                      key="responses-hidden"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="absolute inset-0 flex items-center justify-center bg-slate-900 text-white z-20 rounded-[2rem] overflow-hidden"
+                    >
+                      <div className="absolute inset-0 opacity-20 pointer-events-none">
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#004c9b] to-[#ffdc00]/20" />
+                      </div>
+                      <div className="text-center space-y-6 relative z-10 px-8">
+                        <div className="w-24 h-24 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center mx-auto mb-8 ring-1 ring-white/20">
+                          <EyeOff className="w-10 h-10 text-white" />
+                        </div>
+                        <h3 className="text-3xl font-black tracking-tight">Responses are hidden</h3>
+                        <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.4em]">Click revealed to show results</p>
+                        <button 
+                          onClick={() => setShowResponses(true)}
+                          className="px-8 py-4 bg-[#ffdc00] text-black rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all active:scale-95 hover:bg-white"
+                        >
+                          Reveal Responses
+                        </button>
                       </div>
                     </motion.div>
                   ) : (
@@ -663,15 +714,26 @@ export default function App() {
               </div>
 
               {isFullscreen && (
-                <button 
-                  onClick={() => setIsFullscreen(false)}
-                  className="mt-12 group flex items-center gap-3 text-slate-400 hover:text-red-500 transition-colors"
-                >
-                  <div className="p-3 bg-slate-50 group-hover:bg-red-50 rounded-full transition-colors">
-                    <Square className="w-4 h-4 fill-current" />
-                  </div>
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em]">Stop Presentation</span>
-                </button>
+                <div className="mt-8 flex flex-col items-center gap-6">
+                  <button 
+                    onClick={() => setShowResponses(!showResponses)}
+                    className={cn("px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all active:scale-95 flex items-center gap-3", 
+                      showResponses ? "bg-slate-900 text-white hover:bg-black" : "bg-[#ffdc00] text-black hover:bg-white")}
+                  >
+                    {showResponses ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showResponses ? "Hide Responses" : "Show Responses"}
+                  </button>
+                  
+                  <button 
+                    onClick={() => setIsFullscreen(false)}
+                    className="group flex items-center gap-3 text-slate-400 hover:text-red-500 transition-colors"
+                  >
+                    <div className="p-3 bg-slate-50 group-hover:bg-red-50 rounded-full transition-colors">
+                      <Square className="w-4 h-4 fill-current" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Stop Presentation</span>
+                  </button>
+                </div>
               )}
             </div>
           </div>
