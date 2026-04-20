@@ -164,8 +164,8 @@ const WordCloud = ({ data }: { data: Record<string, number> }) => {
     if (dataString === prevDataRef.current) return;
     prevDataRef.current = dataString;
 
-    const width = containerRef.current.clientWidth || 800;
-    const height = containerRef.current.clientHeight || 500;
+    const width = 800; // Use fixed viewBox width for placement simulation
+    const height = 500; // Use fixed viewBox height for placement simulation
     const svg = d3.select(svgRef.current);
     
     let g = svg.select<SVGGElement>("g.word-group");
@@ -174,7 +174,8 @@ const WordCloud = ({ data }: { data: Record<string, number> }) => {
     }
 
     const maxVal = Math.max(...Object.values(data), 1);
-    const fontSizeScale = d3.scaleLinear().domain([0, maxVal]).range([20, 80]);
+    // Increase min font size and use a power scale for better visibility of small counts
+    const fontSizeScale = d3.scalePow().exponent(0.5).domain([0, maxVal]).range([28, 110]);
     const items = Object.entries(data)
       .map(([label, val]) => ({ label, val }))
       .sort((a, b) => b.val - a.val);
@@ -182,7 +183,7 @@ const WordCloud = ({ data }: { data: Record<string, number> }) => {
     const centerX = width / 2;
     const centerY = height / 2;
     const placedRects: any[] = [];
-    const padding = 6;
+    const padding = 8;
 
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d')!;
@@ -191,27 +192,35 @@ const WordCloud = ({ data }: { data: Record<string, number> }) => {
       const fontSize = fontSizeScale(item.val);
       ctx.font = `900 ${fontSize}px "Plus Jakarta Sans"`;
       const textWidth = ctx.measureText(item.label.toUpperCase()).width;
-      const textHeight = fontSize * 0.8;
+      const textHeight = fontSize * 0.9;
       
       let angle = 0, radius = 0, found = false, tx = 0, ty = 0;
 
-      while (!found && radius < 500) {
+      // Spiral simulation with boundary checks
+      while (!found && radius < 400) {
         tx = centerX + radius * Math.cos(angle) - textWidth / 2;
         ty = centerY + radius * Math.sin(angle) - textHeight / 2;
+        
         const rect = { x1: tx, y1: ty, x2: tx + textWidth, y2: ty + textHeight };
         
-        let overlap = placedRects.some(r => !(rect.x2 + padding < r.x1 || rect.x1 - padding > r.x2 || rect.y2 + padding < r.y1 || rect.y1 - padding > r.y2));
-        
-        if (!overlap) {
-          found = true;
-          placedRects.push(rect);
-        } else {
-          angle += 0.2;
-          radius += 0.5;
+        // Stay within horizontal bounds
+        const withinBounds = rect.x1 > padding && rect.x2 < width - padding && 
+                            rect.y1 > padding && rect.y2 < height - padding;
+
+        if (withinBounds) {
+          let overlap = placedRects.some(r => !(rect.x2 + padding < r.x1 || rect.x1 - padding > r.x2 || rect.y2 + padding < r.y1 || rect.y1 - padding > r.y2));
+          
+          if (!overlap) {
+            found = true;
+            placedRects.push(rect);
+          }
         }
+        
+        angle += 0.15;
+        radius += 0.35;
       }
-      return { ...item, tx: tx + textWidth / 2, ty: ty + textHeight / 2, fontSize };
-    }).filter(d => d.tx !== undefined);
+      return { ...item, tx: tx + textWidth / 2, ty: ty + textHeight / 2, fontSize, found };
+    }).filter(d => d.found);
 
     const wordJoin = g.selectAll<SVGElement, any>(".word-node")
       .data(finalData, d => d.label);
@@ -329,6 +338,9 @@ export default function App() {
         handleNext();
       } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
         handlePrev();
+      } else if (e.key === ' ') {
+        e.preventDefault(); // Prevent page scroll
+        setShowResponses(prev => !prev);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -751,18 +763,6 @@ export default function App() {
           </div>
         </main>
       </div>
-
-      {isFullscreen && (
-        <div className="fixed top-8 right-8 z-[100]">
-          <button 
-            onClick={() => setIsFullscreen(false)}
-            className="flex items-center gap-3 px-8 py-4 bg-slate-900/10 hover:bg-slate-900/20 backdrop-blur-3xl text-slate-900 rounded-full transition-all hover:scale-105 active:scale-95 group font-black uppercase tracking-[0.2em] text-[10px] shadow-lg border border-slate-900/10"
-          >
-            <X className="w-4 h-4" />
-            Exit Presentation
-          </button>
-        </div>
-      )}
     </div>
   );
 }
