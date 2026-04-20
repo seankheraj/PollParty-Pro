@@ -173,54 +173,90 @@ const WordCloud = ({ data }: { data: Record<string, number> }) => {
       g = svg.append("g").attr("class", "word-group");
     }
 
-    const maxVal = Math.max(...Object.values(data), 1);
-    // Increase min font size and use a power scale for better visibility of small counts
-    const fontSizeScale = d3.scalePow().exponent(0.5).domain([0, maxVal]).range([28, 110]);
     const items = Object.entries(data)
       .map(([label, val]) => ({ label, val }))
       .sort((a, b) => b.val - a.val);
 
+    const maxVal = Math.max(...Object.values(data), 1);
+    const count = items.length;
+    
+    // Dynamically adjust font scale based on population density
+    // For many words, we shrink the overall range to ensure fitness
+    const scaleFactor = Math.max(0.3, Math.min(1, 20 / Math.sqrt(count || 1)));
+    const minFontSize = 14 * scaleFactor + 10;
+    const maxFontSize = 70 * scaleFactor + 40;
+
+    const fontSizeScale = d3.scalePow().exponent(0.5).domain([0, maxVal]).range([minFontSize, maxFontSize]);
+
     const centerX = width / 2;
     const centerY = height / 2;
     const placedRects: any[] = [];
-    const padding = 8;
+    const padding = 6;
 
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d')!;
 
     const finalData = items.map(item => {
-      const fontSize = fontSizeScale(item.val);
-      ctx.font = `900 ${fontSize}px "Plus Jakarta Sans"`;
-      const textWidth = ctx.measureText(item.label.toUpperCase()).width;
-      const textHeight = fontSize * 0.9;
+      let fontSize = fontSizeScale(item.val);
+      let textWidth = 0;
+      let textHeight = 0;
       
       let angle = 0, radius = 0, found = false, tx = 0, ty = 0;
 
-      // Spiral simulation with boundary checks
-      while (!found && radius < 400) {
-        tx = centerX + radius * Math.cos(angle) - textWidth / 2;
-        ty = centerY + radius * Math.sin(angle) - textHeight / 2;
+      // Inner function to try placement at a specific font size
+      const tryPlace = (size: number) => {
+        ctx.font = `900 ${size}px "Plus Jakarta Sans"`;
+        textWidth = ctx.measureText(item.label.toUpperCase()).width;
+        textHeight = size * 0.9;
         
-        const rect = { x1: tx, y1: ty, x2: tx + textWidth, y2: ty + textHeight };
+        angle = 0;
+        radius = 0;
         
-        // Stay within horizontal bounds
-        const withinBounds = rect.x1 > padding && rect.x2 < width - padding && 
-                            rect.y1 > padding && rect.y2 < height - padding;
-
-        if (withinBounds) {
-          let overlap = placedRects.some(r => !(rect.x2 + padding < r.x1 || rect.x1 - padding > r.x2 || rect.y2 + padding < r.y1 || rect.y1 - padding > r.y2));
+        while (radius < 500) {
+          tx = centerX + radius * Math.cos(angle) - textWidth / 2;
+          ty = centerY + radius * Math.sin(angle) - textHeight / 2;
           
-          if (!overlap) {
+          const rect = { x1: tx, y1: ty, x2: tx + textWidth, y2: ty + textHeight };
+          
+          const withinBounds = rect.x1 > padding && rect.x2 < width - padding && 
+                              rect.y1 > padding && rect.y2 < height - padding;
+
+          if (withinBounds) {
+            let overlap = placedRects.some(r => !(rect.x2 + padding < r.x1 || rect.x1 - padding > r.x2 || rect.y2 + padding < r.y1 || rect.y1 - padding > r.y2));
+            if (!overlap) return true;
+          }
+          
+          angle += 0.2;
+          radius += 0.4;
+        }
+        return false;
+      };
+
+      found = tryPlace(fontSize);
+      
+      // Fallback: If it doesn't fit, try shrinking it up to 3 times
+      if (!found) {
+        for (let attempt = 0; attempt < 3; attempt++) {
+          fontSize *= 0.75;
+          if (fontSize < 10) break;
+          if (tryPlace(fontSize)) {
             found = true;
-            placedRects.push(rect);
+            break;
           }
         }
-        
-        angle += 0.15;
-        radius += 0.35;
       }
+
+      // Final fallback: If still not found, force it near the edge or center with minimum size
+      if (!found) {
+        fontSize = 10;
+        tx = Math.random() * (width - 100) + 50;
+        ty = Math.random() * (height - 60) + 30;
+        found = true; 
+      }
+
+      placedRects.push({ x1: tx, y1: ty, x2: tx + textWidth, y2: ty + textHeight });
       return { ...item, tx: tx + textWidth / 2, ty: ty + textHeight / 2, fontSize, found };
-    }).filter(d => d.found);
+    });
 
     const wordJoin = g.selectAll<SVGElement, any>(".word-node")
       .data(finalData, d => d.label);
