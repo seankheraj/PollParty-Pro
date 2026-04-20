@@ -324,6 +324,18 @@ export default function App() {
   };
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        handleNext();
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        handlePrev();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeQuestions.length]);
+
+  useEffect(() => {
     fetchData();
     const interval = setInterval(fetchData, 3000);
     return () => clearInterval(interval);
@@ -547,51 +559,51 @@ export default function App() {
         </AnimatePresence>
 
         {/* Main Content Area */}
-        <main className="flex-1 flex flex-col p-6 lg:p-10 min-w-0 transition-all duration-700">
-          <div className="flex flex-col lg:flex-row gap-8 h-full min-h-0">
+        <main className="flex-1 flex flex-col p-4 lg:p-6 min-w-0 transition-all duration-700 overflow-hidden">
+          <div className="flex flex-col lg:flex-row gap-4 h-full min-h-0">
             
             {/* Chart Section */}
-            <div className="flex-[3] bg-white p-10 rounded-[3rem] shadow-2xl border border-slate-200/50 flex flex-col min-h-0 relative group">
-              <div className="flex justify-between items-start mb-10">
-                <div className="space-y-2">
+            <div className="flex-[3] bg-white p-6 lg:p-10 rounded-[3rem] shadow-2xl border border-slate-200/50 flex flex-col min-h-0 relative group">
+              <div className="flex justify-between items-start mb-6 shrink-0">
+                <div className="space-y-1">
                   <AnimatePresence mode="wait">
                     <motion.h2 
                       key={currentQuestion?.id}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="text-4xl font-black text-slate-800 tracking-tighter"
+                      className="text-2xl lg:text-4xl font-black text-slate-800 tracking-tighter line-clamp-2"
                     >
                       {currentQuestion ? (pollData?.title || "Loading Poll...") : "Welcome to PollParty"}
                     </motion.h2>
                   </AnimatePresence>
-                  <p className="flex items-center gap-3 text-xs font-bold text-slate-400 uppercase tracking-[0.25em]">
-                    <span className="bg-slate-100 text-slate-500 px-3 py-1 rounded-full">Slide {currentIdx + 1} of {activeQuestions.length}</span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                    <span className="text-[#004c9b] flex items-center gap-1.5 group-hover:bg-[#004c9b]/5 px-2 py-1 rounded-lg transition-colors">
-                      <span className="w-2 h-2 rounded-full bg-[#004c9b] animate-pulse" />
-                      {totalResponses} Live Responses
+                  <p className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+                    <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full whitespace-nowrap">Slide {currentIdx + 1}/{activeQuestions.length}</span>
+                    <span className="w-1 h-1 rounded-full bg-slate-300 shrink-0" />
+                    <span className="text-[#004c9b] flex items-center gap-1 group-hover:bg-[#004c9b]/5 px-2 py-0.5 rounded-lg transition-colors whitespace-nowrap">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#004c9b] animate-pulse" />
+                      {totalResponses} Live
                     </span>
                   </p>
                 </div>
 
-                <div className="flex items-center gap-4 bg-slate-50 p-2 rounded-[2rem] shadow-inner">
+                <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-3xl shadow-inner shrink-0">
                   <button 
                     onClick={handlePrev}
-                    className="p-4 bg-white hover:bg-[#004c9b] hover:text-white rounded-2xl shadow-sm transition-all active:scale-95 text-slate-400"
+                    className="p-3 bg-white hover:bg-[#004c9b] hover:text-white rounded-xl shadow-sm transition-all active:scale-95 text-slate-400"
                   >
-                    <ChevronLeft className="w-6 h-6" />
+                    <ChevronLeft className="w-5 h-5" />
                   </button>
                   <button 
                     onClick={() => setShowResponses(!showResponses)}
                     title={showResponses ? "Hide Responses" : "Show Responses"}
-                    className={cn("p-4 rounded-2xl shadow-sm transition-all active:scale-95 border", 
+                    className={cn("p-3 rounded-xl shadow-sm transition-all active:scale-95 border", 
                       showResponses ? "bg-white text-slate-600 border-slate-200 hover:bg-slate-100" : "bg-[#004c9b] text-white border-[#004c9b] hover:bg-[#003d7c]")}
                   >
-                    {showResponses ? <EyeOff className="w-6 h-6" /> : <Eye className="w-6 h-6" />}
+                    {showResponses ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                   <button 
                     onClick={handleNext}
-                    className="px-10 py-5 bg-[#004c9b] hover:bg-[#003d7c] text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl transition-all active:scale-95 flex items-center gap-2 group"
+                    className="px-6 py-3 bg-[#004c9b] hover:bg-[#003d7c] text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-xl transition-all active:scale-95 flex items-center gap-2 group"
                   >
                     Next Question
                     <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -599,7 +611,7 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="flex-1 relative min-h-0 bg-slate-50/30 rounded-[2rem] overflow-hidden">
+              <div className="flex-1 relative min-h-0 bg-slate-50/30 rounded-3xl overflow-hidden">
                 <AnimatePresence mode="wait">
                   {!pollData || totalResponses === 0 ? (
                     <motion.div 
@@ -676,17 +688,17 @@ export default function App() {
             </div>
 
             {/* QR Code Section */}
-            <div className="flex-1 bg-white p-10 rounded-[3rem] border border-slate-200/50 shadow-2xl flex flex-col items-center justify-center text-center relative overflow-hidden group">
-              <div className="absolute top-0 left-0 w-full h-2 bg-[#ffdc00]" />
+            <div className="flex-1 bg-white p-6 lg:p-8 rounded-[3rem] border border-slate-200/50 shadow-2xl flex flex-col items-center justify-center text-center relative overflow-hidden group shrink-0">
+              <div className="absolute top-0 left-0 w-full h-1.5 bg-[#ffdc00]" />
               
-              <div className="mb-10 relative">
-                <div className="absolute -inset-8 bg-[#ffdc00]/10 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-[2s]" />
-                <div className="relative p-6 bg-white border-[6px] border-[#ffdc00] rounded-[3rem] shadow-[0_20px_50px_rgba(255,220,0,0.3)] transition-transform duration-500 group-hover:rotate-1">
+              <div className="mb-6 relative w-full flex justify-center">
+                <div className="absolute -inset-6 bg-[#ffdc00]/10 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-[2s]" />
+                <div className="relative p-4 bg-white border-[4px] border-[#ffdc00] rounded-[2.5rem] shadow-[0_15px_40px_rgba(255,220,0,0.2)] transition-transform duration-500 group-hover:rotate-1 max-w-[85%]">
                   {currentQuestion && (
                     <QRCodeSVG 
                       value={currentQuestion.form} 
-                      size={220}
-                      className="p-1"
+                      size={180}
+                      className="p-1 w-full h-auto max-h-[180px] max-w-[180px]"
                       fgColor="#004c9b"
                       level="H"
                       includeMargin
@@ -695,21 +707,21 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <h3 className="text-sm font-black text-slate-300 uppercase tracking-[0.4em]">Scan to Participate</h3>
+              <div className="space-y-2">
+                <h3 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Scan to Participate</h3>
                 <AnimatePresence mode="wait">
                   <motion.p 
                     key={currentQuestion?.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-2xl font-black text-slate-800 tracking-tight"
+                    className="text-xl lg:text-2xl font-black text-slate-800 tracking-tight"
                   >
                     Question {currentQuestion?.id}
                   </motion.p>
                 </AnimatePresence>
-                <div className="flex items-center gap-2 justify-center py-2 px-4 bg-slate-50 rounded-2xl border border-slate-100">
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Security Verified</span>
+                <div className="flex items-center gap-1.5 justify-center py-1.5 px-3 bg-slate-50 rounded-xl border border-slate-100">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">Verified</span>
                 </div>
               </div>
 
