@@ -612,14 +612,21 @@ export default function App() {
             
             {/* Chart Section */}
             <div className="flex-[3] bg-white p-6 lg:p-10 rounded-[3rem] shadow-2xl border border-slate-200/50 flex flex-col min-h-0 relative group">
-              <div className="flex justify-between items-start mb-6 shrink-0">
-                <div className="space-y-1">
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4 lg:mb-6 shrink-0">
+                <div className="space-y-1.5 min-w-0 flex-1 w-full">
                   <AnimatePresence mode="wait">
                     <motion.h2 
                       key={currentQuestion?.id}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="text-2xl lg:text-4xl font-black text-slate-800 tracking-tighter line-clamp-2"
+                      className={cn(
+                        "font-black text-slate-800 tracking-tight leading-tight break-words",
+                        (pollData?.title?.length || 0) > 150
+                          ? "text-lg lg:text-2xl"
+                          : (pollData?.title?.length || 0) > 80
+                            ? "text-xl lg:text-3xl"
+                            : "text-2xl lg:text-4xl"
+                      )}
                     >
                       {currentQuestion ? (pollData?.title || "Loading Poll...") : "Welcome to PollParty"}
                     </motion.h2>
@@ -634,7 +641,7 @@ export default function App() {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-3xl shadow-inner shrink-0">
+                <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-3xl shadow-inner shrink-0 self-end sm:self-start">
                   <button 
                     onClick={handlePrev}
                     className="p-3 bg-white hover:bg-[#004c9b] hover:text-white rounded-xl shadow-sm transition-all active:scale-95 text-slate-400"
